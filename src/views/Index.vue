@@ -86,7 +86,8 @@
       >
         Welcome to my workshop!
       </h1>
-      <button
+      <a
+        href="#chat"
         ref="exploreButton"
         class="
           bg-white
@@ -104,12 +105,16 @@
           no-underline
           25
         "
+        @click="explore"
       >
         Explore
-      </button>
+      </a>
     </section>
 
-    <section class="h-screen bg-[#1c0522] justify-center items-center">
+    <section
+      id="chat"
+      class="h-screen bg-[#1c0522] justify-center items-center"
+    >
       <h2>Chat</h2>
     </section>
   </main>
@@ -143,7 +148,6 @@ export default defineComponent({
       ;(title.value as HTMLHeadingElement).style.marginRight = `${
         scrollY * 4
       }px`
-      console.log(scrollY * 1.5)
       ;(title.value as HTMLHeadingElement).style.marginTop = `${scrollY * 1}px`
       ;(exploreButton.value as HTMLButtonElement).style.marginTop = `${
         scrollY * 2
@@ -180,4 +184,6 @@ export default defineComponent({
 img {
   pointer-events: none;
 }
+//  translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) translateZ(var(--tw-translate-z)) rotate(var(--tw-rotate)) rotateX(var(--tw-rotate-x)) rotateY(var(--tw-rotate-y)) rotateZ(var(--tw-rotate-z)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) scaleZ(var(--tw-scale-z)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y))
+// translateX(var(--tw-translate-x)) translateY(var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
 </style>
