@@ -29,20 +29,26 @@
     >
     <nav class="flex h-full ml-auto mr-0 items-center">
       <ul class="flex list-none h-10 pl-0 items-center">
-        <li class="h-full text-white ml-5">
+        <li
+          class="h-full text-white ml-5"
+          v-for="item in navData"
+          :key="item.name"
+        >
           <router-link
-            :to="{ name: 'Index' }"
+            :to="item.to"
             class="
+              no-underline
               rounded-full
               flex
               font-semibold
               h-full
               px-6
+              text-white
               active:bg-white
               items-center
               justify-center
             "
-            >Home</router-link
+            >{{ item.name }}</router-link
           >
         </li>
       </ul>
@@ -52,37 +58,51 @@
   <footer></footer>
 </template>
 
-<style lang="scss">
+<script lang="ts">
+import { defineComponent } from 'vue'
+import { RouteLocation } from 'vue-router'
+
+interface Nav {
+  name: string
+  to: Partial<RouteLocation>
+}
+
+export default defineComponent({
+  name: 'App',
+  setup() {
+    const navData: Nav[] = [
+      { name: 'Home', to: { name: 'Index' } },
+      { name: 'Chat', to: { name: 'Chat' } }
+    ]
+
+    return { navData }
+  }
+})
+</script>
+
+<style lang="postcss">
 * {
   // font-family: Avenir, Helvetica, Arial, sans-serif;
   font-family: 'Poppins', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   box-sizing: border-box;
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   min-height: 100vh;
-  background-image: linear-gradient(#2b1055, #7597de);
+  // background-image: linear-gradient(#2b1055, #7597de);
+  background-image: linear-gradient(#2b1055, #2b1055);
+  scroll-behavior: smooth;
 }
 
-#nav {
-  padding: 30px;
-
-  a {
-    font-weight: bold;
-    color: #2c3e50;
-
-    &.router-link-exact-active {
-      color: #42b983;
-    }
-  }
-}
-
-.router-link-exact-active {
-  @apply bg-white text-[#2b1055];
+nav .router-link-exact-active {
+  @apply !bg-white text-[#2b1055];
 }
 </style>
