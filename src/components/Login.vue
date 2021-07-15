@@ -195,17 +195,23 @@
 <script lang="ts">
 import Firebase from 'firebase/app'
 import 'firebase/auth'
+import { key, Store } from '@/store'
 import { computed, defineComponent, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useStore } from 'vuex'
 import Icon from '@/components/Icon.vue'
+import { MutationTypes } from '@/store/mutations'
 
 export default defineComponent({
   name: 'Login',
   setup() {
+    const store = useStore(key)
     const email = ref('test@gmail.com')
     const password = ref('test-password')
     const passwordFieldType = ref<'password' | 'text'>('password')
     const passwordFieldIconName = ref<'eye' | 'eye-off'>('eye-off')
+
+    const user = computed(() => (store as Store).getters['GET_USER'])
 
     const togglePasswordFieldType = () => {
       passwordFieldType.value =
@@ -215,28 +221,31 @@ export default defineComponent({
     }
 
     const signInWithEmail = () => {
-      console.log('[signinwithemail]')
       Firebase.auth()
         .signInWithEmailAndPassword(email.value, password.value)
         .then(response => {
-          console.log(response)
+          ;(store as Store).commit(MutationTypes.SET_USER, response.user)
         })
         .catch(error => {
-          console.log(error)
+          console.log('[catch]', error.response.message)
         })
     }
 
     const signInWithGoogle = () => {
       Firebase.auth()
         .signInWithPopup(new Firebase.auth.GoogleAuthProvider())
-        .then(response => console.log(response))
+        .then(response => {
+          // store user data
+          ;(store as Store).commit(MutationTypes.SET_USER, response.user)
+        })
+        .catch(error => {
+          // handle error
+          console.log('[catch]', error.message)
+        })
     }
 
     const $route = useRoute()
-    const expand = computed(() => {
-      console.log('[expand]: ', $route.hash === '#login')
-      return $route.hash === '#login'
-    })
+    const expand = computed(() => $route.hash === '#login')
 
     return {
       email,
@@ -246,6 +255,7 @@ export default defineComponent({
       togglePasswordFieldType,
       signInWithEmail,
       signInWithGoogle,
+      user,
       expand
     }
   },
