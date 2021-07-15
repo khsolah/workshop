@@ -2,7 +2,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import Firebase from 'firebase/app'
 import router from './router'
-import store from './store'
+import store, { key } from './store'
 import 'windi.css'
 
 // Initialize Firebase
@@ -15,4 +15,4 @@ Firebase.initializeApp({
   appId: process.env.VUE_APP_FIREBASE_APP_ID
 })
 
-createApp(App).use(store).use(router).mount('#app')
+createApp(App).use(store, key).use(router).mount('#app')
