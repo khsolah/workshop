@@ -1,3 +1,5 @@
+import firebase from 'firebase/app'
+import 'firebase/auth'
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 const routes: Array<RouteRecordRaw> = [
@@ -10,7 +12,22 @@ const routes: Array<RouteRecordRaw> = [
     path: '/vue-chat',
     name: 'VueChat',
     component: () =>
-      import(/* webpackChunkName: "Chat" */ '@/views/VueChat.vue')
+      import(
+        /* webpackChunkName: "VueChat-Index" */ '@/views/VueChat/Index.vue'
+      )
+  },
+  {
+    path: '/vue-chat/chat',
+    name: 'VueChat-chat',
+    component: () =>
+      import(/* webpackChunkName: "VueChat-Chat" */ '@/views/VueChat/Chat.vue'),
+    beforeEnter: (_, _2, next) => {
+      if (!firebase.auth().currentUser) {
+        return next({ name: 'VueChat', hash: '#login' })
+      }
+
+      next()
+    }
   }
 ]
 
