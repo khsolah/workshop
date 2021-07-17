@@ -72,7 +72,7 @@ export default defineComponent({
   setup() {
     const navData: Nav[] = [
       { name: 'Home', to: { name: 'Index' } },
-      { name: 'Chat', to: { name: 'Chat' } }
+      { name: 'Chat', to: { name: 'VueChat' } }
     ]
 
     return { navData }
