@@ -206,12 +206,11 @@ export default defineComponent({
   name: 'Login',
   setup() {
     const store = useStore(key)
+    const route = useRoute()
     const email = ref('test@gmail.com')
     const password = ref('test-password')
     const passwordFieldType = ref<'password' | 'text'>('password')
     const passwordFieldIconName = ref<'eye' | 'eye-off'>('eye-off')
-
-    const user = computed(() => (store as Store).getters['GET_USER'])
 
     const togglePasswordFieldType = () => {
       passwordFieldType.value =
@@ -244,8 +243,7 @@ export default defineComponent({
         })
     }
 
-    const $route = useRoute()
-    const expand = computed(() => $route.hash === '#login')
+    const expand = computed(() => route.hash === '#login')
 
     return {
       email,
@@ -255,7 +253,6 @@ export default defineComponent({
       togglePasswordFieldType,
       signInWithEmail,
       signInWithGoogle,
-      user,
       expand
     }
   },
