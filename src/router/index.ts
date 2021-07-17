@@ -1,4 +1,3 @@
-import firebase from 'firebase'
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 
 const routes: Array<RouteRecordRaw> = [
@@ -11,14 +10,7 @@ const routes: Array<RouteRecordRaw> = [
     path: '/vue-chat',
     name: 'VueChat',
     component: () =>
-      import(/* webpackChunkName: "Chat" */ '@/views/VueChat.vue'),
-    beforeEnter: (_, _2, next) => {
-      if (!firebase.auth().currentUser) {
-        return next({ name: 'VueChat', hash: '#login' })
-      }
-
-      return next()
-    }
+      import(/* webpackChunkName: "Chat" */ '@/views/VueChat.vue')
   }
 ]
 
