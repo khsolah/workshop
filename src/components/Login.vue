@@ -193,7 +193,7 @@
 </template>
 
 <script lang="ts">
-import Firebase from 'firebase/app'
+import firebase from 'firebase/app'
 import 'firebase/auth'
 import { key, Store } from '@/store'
 import { computed, defineComponent, ref } from 'vue'
@@ -220,7 +220,8 @@ export default defineComponent({
     }
 
     const signInWithEmail = () => {
-      Firebase.auth()
+      firebase
+        .auth()
         .signInWithEmailAndPassword(email.value, password.value)
         .then(response => {
           ;(store as Store).commit(MutationTypes.SET_USER, response.user)
@@ -231,8 +232,9 @@ export default defineComponent({
     }
 
     const signInWithGoogle = () => {
-      Firebase.auth()
-        .signInWithPopup(new Firebase.auth.GoogleAuthProvider())
+      firebase
+        .auth()
+        .signInWithPopup(new firebase.auth.GoogleAuthProvider())
         .then(response => {
           // store user data
           ;(store as Store).commit(MutationTypes.SET_USER, response.user)
