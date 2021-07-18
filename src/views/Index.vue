@@ -1,4 +1,5 @@
 <template>
+  <Header />
   <main>
     <section
       id="intro"
@@ -121,6 +122,7 @@
 </template>
 
 <script lang="ts">
+import Header from '@/components/Header.vue'
 import { defineComponent, onBeforeUnmount, onMounted, ref } from 'vue'
 
 export default defineComponent({
@@ -164,6 +166,9 @@ export default defineComponent({
     })
 
     return { exploreButton, moon, mountainFront, mountainBehind, stars, title }
+  },
+  components: {
+    Header
   }
 })
 </script>
