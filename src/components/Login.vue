@@ -195,6 +195,7 @@
 <script lang="ts">
 import firebase from 'firebase/app'
 import 'firebase/auth'
+import 'firebase/database'
 import { key, Store } from '@/store'
 import { computed, defineComponent, ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -225,6 +226,7 @@ export default defineComponent({
         .signInWithEmailAndPassword(email.value, password.value)
         .then(response => {
           ;(store as Store).commit(MutationTypes.SET_USER, response.user)
+          response.user ? saveUserReference(response.user) : undefined
         })
         .catch(error => {
           console.log('[catch]', error.response.message)
@@ -238,6 +240,7 @@ export default defineComponent({
         .then(response => {
           // store user data
           ;(store as Store).commit(MutationTypes.SET_USER, response.user)
+          response.user ? saveUserReference(response.user) : undefined
         })
         .catch(error => {
           // handle error
@@ -246,6 +249,15 @@ export default defineComponent({
     }
 
     const expand = computed(() => route.hash === '#login')
+
+    // store user to firebase database'
+    const userReference = firebase.database().ref('user')
+    const saveUserReference = (user: firebase.User) => {
+      userReference.child(user.uid).set({
+        name: user.displayName,
+        avatar: user.photoURL
+      })
+    }
 
     return {
       email,
