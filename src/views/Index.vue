@@ -1,6 +1,6 @@
 <template>
   <Header />
-  <main>
+  <main class="bg-[#2b1055]">
     <section
       id="intro"
       class="
