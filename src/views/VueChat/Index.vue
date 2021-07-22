@@ -7,6 +7,7 @@
       min-h-screen
       justify-center
       items-center
+      bg-gray-900
     "
   >
     <img
