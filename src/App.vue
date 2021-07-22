@@ -41,8 +41,6 @@ html {
 
 body {
   min-height: 100vh;
-  // background-image: linear-gradient(#2b1055, #7597de);
-  background-image: linear-gradient(#2b1055, #2b1055);
   scroll-behavior: smooth;
 }
 
