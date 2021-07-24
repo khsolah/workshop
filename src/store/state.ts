@@ -1,5 +1,7 @@
+import { Channel } from '@/@types/chat'
+
 export interface State {
-  currentChannel: firebase.default.database.DataSnapshot | null
+  currentChannel: Channel | null
   user: firebase.default.UserInfo | null
 }
 
