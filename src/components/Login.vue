@@ -49,7 +49,7 @@
         <h1 class="font-bold text-black text-4xl">Login</h1>
         <form
           class="
-            border-solid border-1 border-gray-400 border-0 border-b-1
+            border-solid border-b-1 border-gray-400 border-0 border-b-1
             lg:my-8 lg:pb-8
           "
         >
@@ -198,7 +198,7 @@ import 'firebase/auth'
 import 'firebase/database'
 import { key, Store } from '@/store'
 import { computed, defineComponent, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
 import Icon from '@/components/Icon.vue'
 import { MutationTypes } from '@/store/mutations'
@@ -208,6 +208,7 @@ export default defineComponent({
   setup() {
     const store = useStore(key)
     const route = useRoute()
+    const router = useRouter()
     const email = ref('test@gmail.com')
     const password = ref('test-password')
     const passwordFieldType = ref<'password' | 'text'>('password')
@@ -241,6 +242,7 @@ export default defineComponent({
           // store user data
           ;(store as Store).commit(MutationTypes.SET_USER, response.user)
           response.user ? saveUserReference(response.user) : undefined
+          router.push({ name: 'VueChat-chat' })
         })
         .catch(error => {
           // handle error
