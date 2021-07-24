@@ -13,7 +13,7 @@ export interface Mutations<S = State> {
   ) => void
   [MutationTypes.SET_CURRENT_CHANNEL]: (
     state: S,
-    payload: firebase.default.database.DataSnapshot
+    payload: State['currentChannel']
   ) => void
 }
 
