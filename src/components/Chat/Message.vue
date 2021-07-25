@@ -38,7 +38,10 @@
         </div>
       </div>
     </div>
-    <form class="flex items-center relative lg:mx-5 lg:h-14">
+    <form
+      class="flex items-center relative lg:mx-5 lg:h-14"
+      @submit.prevent.enter="sendMessage"
+    >
       <input
         v-model.trim="message"
         type="text"
@@ -98,6 +101,7 @@ import { key, Store } from '@/store'
 import {
   computed,
   defineComponent,
+  nextTick,
   onBeforeUnmount,
   reactive,
   ref,
@@ -118,6 +122,7 @@ export default defineComponent({
     const message = ref('')
     const error = reactive([])
     const messageRef = firebase.database().ref('message')
+    const privateMessageRef = firebase.database().ref('privateMessage')
     const sendMessage = () => {
       if (currentChannel.value === null || message.value.length === 0) return
       const newMessage: Message = {
@@ -130,12 +135,18 @@ export default defineComponent({
         }
       }
 
-      messageRef
+      getMessageRef()
         .child(currentChannel.value.id)
         .push()
         .set(newMessage)
-        .then(response => {
-          console.log('[response]: ', response)
+        .then(() => {
+          nextTick(() => {
+            window.scrollTo({
+              behavior: 'smooth',
+              top: document.documentElement.scrollHeight,
+              left: 0
+            })
+          })
         })
         .catch(error => {
           console.log('[error]: ', error)
@@ -145,19 +156,35 @@ export default defineComponent({
       message.value = ''
     }
 
+    const getMessageRef = () =>
+      currentChannel.value!.isPrivate ? privateMessageRef : messageRef
+
     // detect new message
     const messagesList = reactive<Message[]>([])
+    let prevMessageListener: {
+      id: string
+      ref: firebase.database.Reference
+    } | null = null
     const messageListener = () => {
       if (!currentChannel.value) return
+      messagesList.length = 0
 
-      messageRef.child(currentChannel.value.id).on('child_added', snapshot => {
-        messagesList.push(snapshot.val())
+      const ref = getMessageRef()
+      ref.child(currentChannel.value.id).on('child_added', snapshot => {
+        console.log('[child_added]', snapshot)
+        messagesList.push({ ...snapshot.val(), id: snapshot.key })
       })
     }
 
     watch(
       () => currentChannel.value,
       () => {
+        // clear previous message listener
+        prevMessageListener?.ref
+          .child(prevMessageListener.id)
+          .off('child_added')
+
+        // add message listener
         messageListener()
       }
     )
@@ -167,6 +194,7 @@ export default defineComponent({
 
     onBeforeUnmount(() => {
       messageRef.off()
+      privateMessageRef.off()
     })
 
     return {
