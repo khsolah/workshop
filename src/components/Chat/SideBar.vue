@@ -172,7 +172,7 @@
       <ul class="list-none w-full pl-0">
         <li
           class="
-            cursor-po
+            cursor-pointer
             flex
             text-white
             w-full
