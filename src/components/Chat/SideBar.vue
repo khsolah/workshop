@@ -185,8 +185,14 @@
             hover:bg-gray-700
             lg:py-4 lg:px-4
           "
+          :class="{
+            '!bg-gray-700':
+              currentChannel &&
+              currentChannel.id === getPrivateChannelId(user.uid)
+          }"
           v-for="user in usersList"
           :key="user.uid"
+          @click.prevent="toggleToPrivateChannel(user)"
         >
           <div class="relative lg:mr-5">
             <img
@@ -220,7 +226,12 @@
             </div>
           </div>
           <span
-            class="min-w-0 overflow-hidden overflow-ellipsis line-clamp-1"
+            class="
+              cursor-pointer
+              min-w-0
+              overflow-hidden overflow-ellipsis
+              line-clamp-1
+            "
             >{{ user.name }}</span
           >
         </li>
@@ -324,8 +335,28 @@ export default defineComponent({
       })
     }
 
-    const toggleChannel = (channel: Channel) => {
-      store.commit(MutationTypes.SET_CURRENT_CHANNEL, channel)
+    const toggleChannel = ({ id, name }: Channel) => {
+      store.commit(MutationTypes.SET_CURRENT_CHANNEL, {
+        id,
+        name,
+        isPrivate: false
+      })
+    }
+
+    const toggleToPrivateChannel = ({ uid, name }: User) => {
+      const id = getPrivateChannelId(uid)
+
+      ;(store as Store).commit(MutationTypes.SET_CURRENT_CHANNEL, {
+        id,
+        name,
+        isPrivate: true
+      })
+    }
+
+    const getPrivateChannelId = (uid: string) => {
+      return uid > user.value!.uid
+        ? `${user.value!.uid}/${uid}`
+        : `${uid}/${user.value!.uid}`
     }
 
     const userRef = firebase.database().ref('user')
@@ -393,7 +424,9 @@ export default defineComponent({
       creatingNewChannel,
       channelList,
       currentChannel,
-      toggleChannel
+      toggleChannel,
+      toggleToPrivateChannel,
+      getPrivateChannelId
     }
   },
   components: {
