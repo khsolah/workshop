@@ -24,10 +24,10 @@
         justify-between
         lg:pb-7 lg:px-7
       "
-      v-if="user"
+      v-if="currentUser"
     >
       <img
-        :src="user.photoURL"
+        :src="currentUser.photoURL"
         alt="avatar"
         class="rounded-full bg-gray-700 lg:w-10 lg:h-10"
       />
@@ -136,6 +136,7 @@
         <li
           class="
             cursor-pointer
+            flex
             text-white
             w-full
             select-none
@@ -143,7 +144,6 @@
             overflow-hidden overflow-ellipsis
             hover:bg-gray-700
             lg:py-4 lg:px-4
-            line-clamp-1
           "
           :class="{
             '!bg-gray-700': currentChannel && currentChannel.id === channel.id
@@ -152,7 +152,22 @@
           :key="channel.id"
           @click.prevent="toggleChannel(channel)"
         >
-          {{ channel.name }}
+          <span
+            class="w-full overflow-hidden overflow-ellipsis line-clamp-1 !block"
+            :class="{
+              'mr-4': getNotifications(channel.id)
+            }"
+          >
+            {{ channel.name }}
+          </span>
+          <span
+            v-show="
+              channel.id !== currentChannel.id &&
+              getNotifications(channel.id) > 0
+            "
+            class="ml-auto mr-0"
+            >{{ getNotifications(channel.id) }}</span
+          >
         </li>
       </ul>
     </div>
@@ -232,7 +247,18 @@
               overflow-hidden overflow-ellipsis
               line-clamp-1
             "
+            :class="{
+              'mr-4': getPrivateNotifications(user)
+            }"
             >{{ user.name }}</span
+          >
+          <span
+            v-show="
+              getPrivateNotifications(user.uid) !== currentChannel.id &&
+              getPrivateNotifications(user) > 0
+            "
+            class="ml-auto mr-0"
+            >{{ getPrivateNotifications(user) }}</span
           >
         </li>
       </ul>
@@ -295,12 +321,12 @@ export default defineComponent({
     const presenceRef = firebase.database().ref('presence')
     const logout = () => {
       firebase.auth().signOut()
-      presenceRef.child(user.value!.uid).remove()
+      presenceRef.child(currentUser.value!.uid).remove()
       ;(store as Store).commit(MutationTypes.SET_USER, null)
       router.push({ name: 'VueChat' })
     }
 
-    const user = computed(() => store.getters['GET_USER'])
+    const currentUser = computed(() => store.getters['GET_USER'])
 
     const creatingNewChannel = ref(false)
     const channelRef = firebase.database().ref('channel')
@@ -326,37 +352,42 @@ export default defineComponent({
     const currentChannel = computed(() => store.getters['GET_CURRENT_CHANNEL'])
 
     const channelChildListener = () => {
-      channelRef.on('child_added', dataSnapShot => {
-        channelList.push(dataSnapShot.val())
+      channelRef.on('child_added', snapshot => {
+        channelList.push(snapshot.val())
 
         if (!currentChannel.value) {
           toggleChannel(channelList[0])
         }
+
+        addNotificationListener(snapshot.key as string)
       })
     }
 
     const toggleChannel = ({ id, name }: Channel) => {
+      resetNotifications()
       store.commit(MutationTypes.SET_CURRENT_CHANNEL, {
         id,
         name,
         isPrivate: false
       })
+      resetNotifications()
     }
 
     const toggleToPrivateChannel = ({ uid, name }: User) => {
       const id = getPrivateChannelId(uid)
-
+      resetNotifications()
       ;(store as Store).commit(MutationTypes.SET_CURRENT_CHANNEL, {
         id,
         name,
         isPrivate: true
       })
+      resetNotifications()
     }
 
     const getPrivateChannelId = (uid: string) => {
-      return uid > user.value!.uid
-        ? `${user.value!.uid}/${uid}`
-        : `${uid}/${user.value!.uid}`
+      return uid > currentUser.value!.uid
+        ? `${currentUser.value!.uid}/${uid}`
+        : `${uid}/${currentUser.value!.uid}`
     }
 
     const userRef = firebase.database().ref('user')
@@ -365,7 +396,7 @@ export default defineComponent({
     // store all users in users list and add listener to set user status (online or offline)
     const setUserListener = () => {
       userRef.on('child_added', snapshot => {
-        if (snapshot.key !== user.value!.uid) {
+        if (snapshot.key !== currentUser.value!.uid) {
           usersList.push({
             ...snapshot.val(),
             uid: snapshot.key,
@@ -376,7 +407,7 @@ export default defineComponent({
 
       connectedRef.on('value', snapshot => {
         if (snapshot.val() === true) {
-          const userPresenceRef = presenceRef.child(user.value!.uid)
+          const userPresenceRef = presenceRef.child(currentUser.value!.uid)
           userPresenceRef.set(true)
           userPresenceRef.onDisconnect().remove()
         }
@@ -384,14 +415,26 @@ export default defineComponent({
 
       // presenceRef child_added
       presenceRef.on('child_added', snapshot => {
-        if (user.value!.uid !== snapshot.key) {
+        if (currentUser.value!.uid !== snapshot.key) {
           modifyUserStatus(snapshot.key as string, 'online')
         }
+
+        const channelId = getPrivateChannelId(snapshot.key as string)
+        privateMessageRef.child(channelId).on('value', snapshot => {
+          handleNotifications({
+            id: channelId,
+            snapshot
+          })
+        })
       })
 
       presenceRef.on('child_removed', snapshot => {
-        if (user.value!.uid !== snapshot.key) {
+        if (currentUser.value!.uid !== snapshot.key) {
           modifyUserStatus(snapshot.key as string, 'offline')
+
+          privateMessageRef
+            .child(getPrivateChannelId(snapshot.key as string))
+            .off()
         }
       })
     }
@@ -400,6 +443,63 @@ export default defineComponent({
       const index = usersList.findIndex(user => user.uid === id)
       if (index === -1) return
       usersList[index].status = status
+    }
+
+    // notifications
+    const messageRef = firebase.database().ref('message')
+    const privateMessageRef = firebase.database().ref('privateMessage')
+    const notificationsList = reactive<{
+      [key: string]:
+        | {
+            id: string
+            total: number
+            lastKnownTotal: number
+            notifications: number
+          }
+        | undefined
+    }>({})
+
+    const addNotificationListener = (id: string) => {
+      messageRef.child(id).on('value', snapshot => {
+        handleNotifications({ id, snapshot })
+      })
+    }
+
+    const handleNotifications = ({
+      id,
+      snapshot
+    }: {
+      id: string
+      snapshot: firebase.database.DataSnapshot
+    }) => {
+      const notification = notificationsList[id]
+
+      if (!notification) {
+        notificationsList[id] = {
+          id: id,
+          total: snapshot.numChildren(),
+          lastKnownTotal: snapshot.numChildren(),
+          notifications: 0
+        }
+      } else if (currentChannel.value!.id !== id) {
+        notification.notifications = snapshot.numChildren() - notification.total
+        notification.lastKnownTotal = snapshot.numChildren()
+      }
+    }
+
+    // reset currnt channel's notification
+    const resetNotifications = () => {
+      if (!currentChannel.value) return
+      const notification = notificationsList[currentChannel.value.id]!
+      notification.total = notification.lastKnownTotal
+      notification.notifications = 0
+    }
+
+    const getNotifications = (id: string) =>
+      notificationsList[id] ? notificationsList[id]!.notifications : 0
+
+    const getPrivateNotifications = (user: User) => {
+      return getNotifications(getPrivateChannelId(user.uid))
     }
 
     onMounted(() => {
@@ -416,7 +516,7 @@ export default defineComponent({
 
     return {
       logout,
-      user,
+      currentUser,
       usersList,
       newChannelName,
       createChannel,
@@ -426,7 +526,10 @@ export default defineComponent({
       currentChannel,
       toggleChannel,
       toggleToPrivateChannel,
-      getPrivateChannelId
+      getPrivateChannelId,
+      notificationsList,
+      getNotifications,
+      getPrivateNotifications
     }
   },
   components: {
