@@ -8,7 +8,9 @@
       w-auto
       overflow-y-scroll
       justify-between
+      lg:pb-1
     "
+    ref="messageContainer"
   >
     <div class="flex-1 lg:px-5 lg:py-5">
       <div
@@ -38,7 +40,7 @@
           >
             {{ message.content }}
           </p>
-          <img :src="message.image" alt="image" v-else class="w-full" />
+          <img :src="message.image" alt="image" v-else class="w-full h-50" />
         </div>
       </div>
     </div>
@@ -47,23 +49,23 @@
         :value="uploadProgress"
         max="100"
         min="0"
-        class="w-full progress h-5"
+        class="h-5 w-full progress"
       />
       <span
         class="
+          font-bold
+          text-sm text-white
           transform
           top-1/2
           left-1/2
           -translate-x-1/2 -translate-y-1/2
           absolute
-          text-sm text-white
-          font-bold
         "
         >{{ uploadStatusText }}</span
       >
     </div>
     <form
-      class="flex flex-wrap items-center relative lg:mx-5 lg:h-14"
+      class="flex flex-wrap flex-shrink-0 items-center relative lg:mx-5 lg:h-14"
       @submit.prevent.enter="sendMessage"
     >
       <input
@@ -144,6 +146,7 @@ import {
   defineComponent,
   nextTick,
   onBeforeUnmount,
+  onUpdated,
   reactive,
   ref,
   watch
@@ -160,6 +163,7 @@ export default defineComponent({
     const currentChannel = computed(() => store.getters['GET_CURRENT_CHANNEL'])
 
     // send new message
+    const messageContainer = ref<HTMLElement>()
     const message = ref('')
     const error = reactive([])
     const messageRef = firebase.database().ref('message')
@@ -184,9 +188,8 @@ export default defineComponent({
         .set(newMessage)
         .then(() => {
           nextTick(() => {
-            window.scrollTo({
-              behavior: 'smooth',
-              top: document.documentElement.scrollHeight,
+            messageContainer.value!.scrollTo({
+              top: messageContainer.value!.scrollHeight,
               left: 0
             })
           })
@@ -217,9 +220,8 @@ export default defineComponent({
         .set(newMessage)
         .then(() => {
           nextTick(() => {
-            window.scrollTo({
-              behavior: 'smooth',
-              top: document.documentElement.scrollHeight,
+            messageContainer.value!.scrollTo({
+              top: messageContainer.value!.scrollHeight,
               left: 0
             })
           })
@@ -245,8 +247,25 @@ export default defineComponent({
       const ref = getMessageRef()
       ref.child(currentChannel.value.id).on('child_added', snapshot => {
         messagesList.push({ ...snapshot.val(), id: snapshot.key })
+        nextTick(() => {
+          messageContainer.value!.scrollTo({
+            top: messageContainer.value!.scrollHeight,
+            left: 0
+          })
+        })
       })
+
+      prevMessageListener = { id: currentChannel.value.id, ref }
     }
+
+    onUpdated(() => {
+      nextTick(() => {
+        messageContainer.value!.scrollTo({
+          top: messageContainer.value!.scrollHeight,
+          left: 0
+        })
+      })
+    })
 
     watch(
       () => currentChannel.value,
@@ -258,6 +277,9 @@ export default defineComponent({
 
         // add message listener
         messageListener()
+      },
+      {
+        immediate: true
       }
     )
 
@@ -272,7 +294,6 @@ export default defineComponent({
       if (uploadStatus.value === 'uploading') return
       uploadStatus.value = 'uploading'
       const file = (event.target as EventTarget & { files: FileList }).files[0]
-      console.log('[file]', file)
       const filePath = `chat/${
         currentChannel.value!.isPrivate
           ? `private/${currentChannel.value!.id}`
@@ -334,6 +355,7 @@ export default defineComponent({
       error,
       sendMessage,
       messagesList,
+      messageContainer,
       transformTimestampFromNow,
       uploadFile,
       uploadProgress,
